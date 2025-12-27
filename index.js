@@ -4,21 +4,25 @@ const db = require('./db');
 const app = express();
 app.use(express.json());
 
-app.post('/create-point', (req, res) => {
-  const { point_name, latitude, longitude, district_id } = req.body;
+app.post('/create-point', async (req, res) => {
+  try {
+    const { point_name, latitude, longitude, district_id } = req.body;
 
-  db.query(
-    'CALL sp_create_point(?,?,?,?)',
-    [point_name, latitude, longitude, district_id],
-    (err) => {
-      if (err) {
-        console.log(err);
-        return res.status(500).json({ error: 'Database error' });
-      }
-      res.json({ message: 'Point created successfully' });
-    }
-  );
+    const sql = 'CALL sp_create_point(?,?,?,?)';
+    const [rows] = await db.promise().query(sql, [
+      point_name,
+      latitude,
+      longitude,
+      district_id
+    ]);
+
+    res.json({ message: 'Point created successfully' });
+  } catch (err) {
+    console.log("MYSQL ERROR:", err);
+    res.status(500).json({ error: err.message });
+  }
 });
+
 app.get('/points/:district_id', (req, res) => {
   const districtId = req.params.district_id;
 
